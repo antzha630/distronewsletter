@@ -65,8 +65,8 @@ The application converts newsletter entries into the following JSON format:
    Create a `.env` file in the root directory:
    ```bash
    # Distro API Configuration
-   DISTRO_API_KEY=YjBBLiyW7bMAwyOoXpmTOQSjWbbgmec0qz8n6xOwJD3Eh9hCTwGVPk6te1ivVUtU
-   DISTRO_API_ENDPOINT=https://pulse-chain-dc452eb2642a.herokuapp.com/api/external/news
+   DISTRO_API_KEY=your_api_key_here
+   DISTRO_API_ENDPOINT=your_api_endpoint_here
    
    # App Configuration
    PORT=3000
@@ -111,7 +111,10 @@ The application converts newsletter entries into the following JSON format:
 1. **Push to GitHub**
 2. **Connect to Vercel** from the dashboard
 3. **Import your repository**
-4. **Deploy automatically**
+4. **Set environment variables** in Vercel dashboard:
+   - `DISTRO_API_KEY`: Your Distro API key
+   - `DISTRO_API_ENDPOINT`: Your Distro API endpoint
+5. **Deploy automatically**
 
 ## Usage
 
@@ -165,8 +168,8 @@ As mentioned in the documentation, you can use the workaround approach:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DISTRO_API_KEY` | Your Distro API key | `YjBBLiyW7bMAwyOoXpmTOQSjWbbgmec0qz8n6xOwJD3Eh9hCTwGVPk6te1ivVUtU` |
-| `DISTRO_API_ENDPOINT` | Distro API endpoint | `https://pulse-chain-dc452eb2642a.herokuapp.com/api/external/news` |
+| `DISTRO_API_KEY` | Your Distro API key | (required) |
+| `DISTRO_API_ENDPOINT` | Distro API endpoint | (required) |
 | `PORT` | Application port | `3000` |
 | `LOG_LEVEL` | Logging level | `info` |
 | `CRON_SCHEDULE` | Cron schedule for processing | `*/5 * * * *` (every 5 minutes) |
