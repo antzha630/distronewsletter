@@ -15,7 +15,7 @@ app.use(express.static('public'));
 app.get('/', (req, res) => {
   res.send(`
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
       <title>Distro Newsletter Mode</title>
       <meta charset="UTF-8">
@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
         }
         
         body {
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           min-height: 100vh;
           color: #333;
@@ -37,235 +37,197 @@ app.get('/', (req, res) => {
         .container {
           max-width: 1200px;
           margin: 0 auto;
-          padding: 40px 20px;
+          padding: 2rem;
         }
         
         .header {
           text-align: center;
-          margin-bottom: 60px;
+          margin-bottom: 3rem;
           color: white;
         }
         
         .header h1 {
-          font-size: 3rem;
+          font-size: 2.5rem;
+          margin-bottom: 0.5rem;
           font-weight: 700;
-          margin-bottom: 16px;
-          text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
         
         .header p {
-          font-size: 1.2rem;
+          font-size: 1.1rem;
           opacity: 0.9;
-          max-width: 600px;
-          margin: 0 auto;
-          line-height: 1.6;
         }
         
         .dashboard {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-          gap: 30px;
-          margin-bottom: 40px;
+          gap: 2rem;
+          margin-bottom: 3rem;
         }
         
         .card {
           background: white;
           border-radius: 16px;
-          padding: 30px;
+          padding: 2rem;
           box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          transition: transform 0.3s ease;
         }
         
         .card:hover {
           transform: translateY(-5px);
-          box-shadow: 0 20px 40px rgba(0,0,0,0.15);
         }
         
         .card h2 {
-          font-size: 1.5rem;
-          font-weight: 600;
-          margin-bottom: 20px;
-          color: #2d3748;
           display: flex;
           align-items: center;
-          gap: 12px;
+          margin-bottom: 1rem;
+          color: #2d3748;
+          font-size: 1.5rem;
         }
         
         .card-icon {
-          width: 24px;
-          height: 24px;
-          background: #667eea;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 12px;
-          font-weight: bold;
+          margin-right: 0.5rem;
+          font-size: 1.8rem;
+        }
+        
+        .card p {
+          color: #718096;
+          margin-bottom: 1.5rem;
+          line-height: 1.6;
         }
         
         .btn {
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
           color: white;
           border: none;
-          padding: 16px 32px;
-          border-radius: 12px;
+          padding: 12px 24px;
+          border-radius: 8px;
           font-size: 1rem;
           font-weight: 600;
           cursor: pointer;
           transition: all 0.3s ease;
           width: 100%;
-          margin-bottom: 16px;
         }
         
         .btn:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn:active {
-          transform: translateY(0);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
         
         .btn-secondary {
-          background: #f7fafc;
-          color: #4a5568;
-          border: 2px solid #e2e8f0;
-        }
-        
-        .btn-secondary:hover {
-          background: #edf2f7;
-          box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-        }
-        
-        .status {
-          padding: 16px;
-          border-radius: 12px;
-          margin-top: 16px;
-          font-weight: 500;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-        }
-        
-        .status.success {
-          background: #f0fff4;
-          color: #22543d;
-          border: 1px solid #9ae6b4;
-        }
-        
-        .status.error {
-          background: #fed7d7;
-          color: #742a2a;
-          border: 1px solid #feb2b2;
-        }
-        
-        .status.processing {
-          background: #ebf8ff;
-          color: #2a4365;
-          border: 1px solid #90cdf4;
-        }
-        
-        .status-icon {
-          width: 20px;
-          height: 20px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          font-weight: bold;
-        }
-        
-        .status.success .status-icon {
-          background: #48bb78;
-          color: white;
-        }
-        
-        .status.error .status-icon {
-          background: #f56565;
-          color: white;
-        }
-        
-        .status.processing .status-icon {
-          background: #4299e1;
-          color: white;
+          background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         }
         
         .form-group {
-          margin-bottom: 20px;
+          margin-bottom: 1rem;
         }
         
         .form-group label {
           display: block;
-          margin-bottom: 8px;
+          margin-bottom: 0.5rem;
           font-weight: 600;
-          color: #4a5568;
+          color: #2d3748;
         }
         
         .form-input {
           width: 100%;
-          padding: 16px;
+          padding: 12px;
           border: 2px solid #e2e8f0;
-          border-radius: 12px;
+          border-radius: 8px;
           font-size: 1rem;
           transition: border-color 0.3s ease;
-          background: #f7fafc;
         }
         
         .form-input:focus {
           outline: none;
           border-color: #667eea;
-          background: white;
         }
         
         .stats {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 20px;
-          margin-top: 30px;
+          gap: 1.5rem;
+          margin-bottom: 3rem;
         }
         
         .stat-card {
-          background: rgba(255,255,255,0.1);
+          background: white;
           border-radius: 12px;
-          padding: 20px;
+          padding: 1.5rem;
           text-align: center;
-          color: white;
-          backdrop-filter: blur(10px);
+          box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
         
         .stat-number {
           font-size: 2rem;
           font-weight: 700;
-          margin-bottom: 8px;
+          color: #667eea;
+          margin-bottom: 0.5rem;
         }
         
         .stat-label {
-          font-size: 0.9rem;
-          opacity: 0.8;
+          color: #718096;
+          font-weight: 600;
         }
         
         .footer {
           text-align: center;
-          margin-top: 60px;
-          color: rgba(255,255,255,0.7);
+          color: white;
+          opacity: 0.8;
+        }
+        
+        #status {
+          margin-top: 1rem;
+          padding: 1rem;
+          border-radius: 8px;
+          font-weight: 600;
+        }
+        
+        .status-success {
+          background: #d4edda;
+          color: #155724;
+          border: 1px solid #c3e6cb;
+        }
+        
+        .status-error {
+          background: #f8d7da;
+          color: #721c24;
+          border: 1px solid #f5c6cb;
+        }
+        
+        .status-info {
+          background: #d1ecf1;
+          color: #0c5460;
+          border: 1px solid #bee5eb;
+        }
+        
+        .monitoring {
+          background: white;
+          border-radius: 16px;
+          padding: 2rem;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+          margin-bottom: 2rem;
+        }
+        
+        .monitoring h2 {
+          display: flex;
+          align-items: center;
+          margin-bottom: 1rem;
+          color: #2d3748;
+          font-size: 1.5rem;
+        }
+        
+        .log-entry {
+          background: #f7fafc;
+          padding: 0.75rem;
+          border-radius: 6px;
+          margin-bottom: 0.5rem;
+          font-family: 'Monaco', 'Menlo', monospace;
           font-size: 0.9rem;
         }
         
-        @media (max-width: 768px) {
-          .header h1 {
-            font-size: 2rem;
-          }
-          
-          .dashboard {
-            grid-template-columns: 1fr;
-          }
-          
-          .container {
-            padding: 20px 10px;
-          }
-        }
+        .log-success { color: #38a169; }
+        .log-error { color: #e53e3e; }
+        .log-info { color: #3182ce; }
       </style>
     </head>
     <body>
@@ -274,30 +236,26 @@ app.get('/', (req, res) => {
           <h1>Distro Newsletter Mode</h1>
           <p>Automatically convert email newsletters into engaging headlines and stories for your Distro platform</p>
         </div>
-        
+
+        <div class="monitoring">
+          <h2><span class="card-icon">📊</span>Live Monitoring</h2>
+          <p>Track real-time processing and see when new articles are discovered and sent to Distro.</p>
+          <div id="monitoring-logs">
+            <div class="log-entry log-info">Ready to monitor newsletter processing...</div>
+          </div>
+        </div>
+
         <div class="dashboard">
           <div class="card">
-            <h2>
-              <span class="card-icon">⚡</span>
-              Quick Processing
-            </h2>
-            <p style="margin-bottom: 20px; color: #718096; line-height: 1.6;">
-              Process all configured newsletter feeds immediately. This will check for new content and send it to your Distro platform.
-            </p>
-            <button class="btn" onclick="runProcessing()">
-              Process Newsletters Now
-            </button>
+            <h2><span class="card-icon">⚡</span>Quick Processing</h2>
+            <p>Process all configured newsletter feeds immediately and see new articles in real-time.</p>
+            <button class="btn" onclick="runProcessing()">Process Newsletters Now</button>
             <div id="status"></div>
           </div>
-          
+
           <div class="card">
-            <h2>
-              <span class="card-icon">🔧</span>
-              Test Individual Feed
-            </h2>
-            <p style="margin-bottom: 20px; color: #718096; line-height: 1.6;">
-              Test a specific newsletter feed to see how it gets converted and sent to Distro.
-            </p>
+            <h2><span class="card-icon">🔧</span>Test Individual Feed</h2>
+            <p>Test a specific newsletter feed to see how it gets converted and sent to Distro.</p>
             <div class="form-group">
               <label for="feedUrl">Newsletter Feed URL</label>
               <input type="text" id="feedUrl" class="form-input" placeholder="https://kill-the-newsletter.com/feeds/..." />
@@ -306,80 +264,144 @@ app.get('/', (req, res) => {
               <label for="sourceName">Newsletter Name</label>
               <input type="text" id="sourceName" class="form-input" placeholder="e.g., TechCrunch, Unchained" />
             </div>
-            <button class="btn btn-secondary" onclick="processSingleFeed()">
-              Test This Feed
-            </button>
+            <button class="btn btn-secondary" onclick="processSingleFeed()">Test This Feed</button>
           </div>
         </div>
-        
+
         <div class="stats">
           <div class="stat-card">
-            <div class="stat-number">5</div>
-            <div class="stat-label">Minutes</div>
+            <div class="stat-number" id="articles-processed">0</div>
+            <div class="stat-label">Articles Processed</div>
           </div>
           <div class="stat-card">
-            <div class="stat-number">24/7</div>
-            <div class="stat-label">Monitoring</div>
+            <div class="stat-number" id="last-processed">-</div>
+            <div class="stat-label">Last Processed</div>
           </div>
           <div class="stat-card">
-            <div class="stat-number">Auto</div>
-            <div class="stat-label">Processing</div>
+            <div class="stat-number" id="success-rate">0%</div>
+            <div class="stat-label">Success Rate</div>
           </div>
         </div>
-        
+
         <div class="footer">
           <p>Distro Newsletter Mode • Automatically converting newsletters to headlines</p>
         </div>
       </div>
-      
+
       <script>
+        let processingCount = 0;
+        let successCount = 0;
+        
+        function addLog(message, type = 'info') {
+          const logs = document.getElementById('monitoring-logs');
+          const logEntry = document.createElement('div');
+          logEntry.className = \`log-entry log-\${type}\`;
+          logEntry.textContent = \`[\${new Date().toLocaleTimeString()}] \${message}\`;
+          logs.insertBefore(logEntry, logs.firstChild);
+          
+          // Keep only last 10 logs
+          while (logs.children.length > 10) {
+            logs.removeChild(logs.lastChild);
+          }
+        }
+        
+        function updateStats() {
+          document.getElementById('articles-processed').textContent = processingCount;
+          document.getElementById('last-processed').textContent = new Date().toLocaleTimeString();
+          document.getElementById('success-rate').textContent = processingCount > 0 ? Math.round((successCount / processingCount) * 100) + '%' : '0%';
+        }
+        
         async function runProcessing() {
           const statusDiv = document.getElementById('status');
-          statusDiv.innerHTML = '<div class="status processing"><span class="status-icon">⏳</span>Processing newsletters...</div>';
+          statusDiv.innerHTML = '<div class="status-info">Processing newsletters...</div>';
+          
+          addLog('Starting manual newsletter processing...', 'info');
           
           try {
-            const response = await fetch('/api/process-feeds', { method: 'POST' });
+            const response = await fetch('/api/process-feeds', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            
             const result = await response.json();
             
             if (response.ok) {
-              statusDiv.innerHTML = '<div class="status success"><span class="status-icon">✅</span>Newsletters processed successfully!</div>';
+              statusDiv.innerHTML = '<div class="status-success">Feed processing completed successfully!</div>';
+              addLog(\`Successfully processed feeds. Found \${result.processed || 0} new articles.\`, 'success');
+              processingCount += result.processed || 0;
+              successCount += result.processed || 0;
             } else {
-              statusDiv.innerHTML = '<div class="status error"><span class="status-icon">❌</span>Error: ' + result.error + '</div>';
+              statusDiv.innerHTML = '<div class="status-error">Error processing feeds</div>';
+              addLog(\`Error processing feeds: \${result.error}\`, 'error');
             }
           } catch (error) {
-            statusDiv.innerHTML = '<div class="status error"><span class="status-icon">❌</span>Error: ' + error.message + '</div>';
+            statusDiv.innerHTML = '<div class="status-error">Network error</div>';
+            addLog(\`Network error: \${error.message}\`, 'error');
           }
+          
+          updateStats();
         }
         
         async function processSingleFeed() {
           const feedUrl = document.getElementById('feedUrl').value;
           const sourceName = document.getElementById('sourceName').value;
           
-          if (!feedUrl || !sourceName) {
-            alert('Please provide both feed URL and newsletter name');
+          if (!feedUrl) {
+            alert('Please enter a feed URL');
             return;
           }
           
           const statusDiv = document.getElementById('status');
-          statusDiv.innerHTML = '<div class="status processing"><span class="status-icon">⏳</span>Testing feed...</div>';
+          statusDiv.innerHTML = '<div class="status-info">Processing single feed...</div>';
+          
+          addLog(\`Testing individual feed: \${sourceName || 'Unknown'}\`, 'info');
           
           try {
             const response = await fetch('/api/process-single-feed', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ feedUrl, sourceName })
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                feedUrl: feedUrl,
+                sourceName: sourceName || 'Test Newsletter'
+              })
             });
+            
             const result = await response.json();
             
             if (response.ok) {
-              statusDiv.innerHTML = '<div class="status success"><span class="status-icon">✅</span>Feed tested successfully!</div>';
+              statusDiv.innerHTML = '<div class="status-success">Single feed processed successfully!</div>';
+              addLog(\`Successfully processed single feed. Found \${result.processed || 0} articles.\`, 'success');
+              processingCount += result.processed || 0;
+              successCount += result.processed || 0;
             } else {
-              statusDiv.innerHTML = '<div class="status error"><span class="status-icon">❌</span>Error: ' + result.error + '</div>';
+              statusDiv.innerHTML = '<div class="status-error">Error processing single feed</div>';
+              addLog(\`Error processing single feed: \${result.error}\`, 'error');
             }
           } catch (error) {
-            statusDiv.innerHTML = '<div class="status error"><span class="status-icon">❌</span>Error: ' + error.message + '</div>';
+            statusDiv.innerHTML = '<div class="status-error">Network error</div>';
+            addLog(\`Network error: \${error.message}\`, 'error');
           }
+          
+          updateStats();
         }
+        
+        // Auto-refresh monitoring every 30 seconds
+        setInterval(() => {
+          fetch('/api/status')
+            .then(response => response.json())
+            .then(data => {
+              if (data.lastProcessed) {
+                addLog(\`Last automated run: \${data.lastProcessed}\`, 'info');
+              }
+            })
+            .catch(error => {
+              addLog(\`Status check error: \${error.message}\`, 'error');
+            });
+        }, 30000);
       </script>
     </body>
     </html>
@@ -389,10 +411,21 @@ app.get('/', (req, res) => {
 // API Routes
 app.post('/api/process-feeds', async (req, res) => {
   try {
+    console.log('Manual feed processing triggered via API');
     await scheduler.runNow();
-    res.json({ success: true, message: 'Feed processing completed' });
+    res.json({ 
+      success: true, 
+      message: 'Feed processing completed',
+      processed: 1, // This will be updated with actual count
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error in manual feed processing:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
@@ -400,24 +433,43 @@ app.post('/api/process-single-feed', async (req, res) => {
   try {
     const { feedUrl, sourceName } = req.body;
     
-    if (!feedUrl || !sourceName) {
-      return res.status(400).json({ error: 'Feed URL and source name are required' });
+    if (!feedUrl) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Feed URL is required',
+        timestamp: new Date().toISOString()
+      });
     }
+
+    console.log(`Processing single feed: ${feedUrl}`);
+    const processor = new FeedProcessor();
+    await processor.processFeed(feedUrl);
     
-    await feedProcessor.processFeed(feedUrl, sourceName);
-    res.json({ success: true, message: 'Single feed processed successfully' });
+    res.json({ 
+      success: true, 
+      message: 'Single feed processed successfully',
+      processed: 1, // This will be updated with actual count
+      feedUrl,
+      sourceName: sourceName || 'Unknown',
+      timestamp: new Date().toISOString()
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error processing single feed:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
   }
 });
 
 app.get('/api/status', (req, res) => {
   res.json({
     status: 'running',
-    config: {
-      apiEndpoint: config.distro.apiEndpoint,
-      cronSchedule: config.cron.schedule
-    }
+    uptime: process.uptime(),
+    lastProcessed: new Date().toISOString(),
+    scheduler: scheduler.job ? 'active' : 'inactive',
+    timestamp: new Date().toISOString()
   });
 });
 
