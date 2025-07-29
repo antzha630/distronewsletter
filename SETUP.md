@@ -57,8 +57,8 @@ For production use:
 
 ## 🔧 Configuration
 
-- **API Key**: `YjBBLiyW7bMAwyOoXpmTOQSjWbbgmec0qz8n6xOwJD3Eh9hCTwGVPk6te1ivVUtU`
-- **API Endpoint**: `https://pulse-chain-dc452eb2642a.herokuapp.com/api/external/news`
+- **API Key**: Set via environment variable `DISTRO_API_KEY`
+- **API Endpoint**: Set via environment variable `DISTRO_API_ENDPOINT`
 - **Cron Schedule**: Every 5 minutes
 - **Port**: 3000
 
