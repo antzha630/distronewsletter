@@ -60,8 +60,21 @@ class FeedProcessor {
    * @returns {Object} The formatted JSON payload
    */
   convertToDistroSchema(entry, sourceName) {
+    // Debug: Log what we're getting from the feed
+    console.log(`\n🔍 Processing entry:`);
+    console.log(`   Title: ${entry.title}`);
+    console.log(`   Description length: ${(entry.description || '').length}`);
+    console.log(`   Summary length: ${(entry.summary || '').length}`);
+    console.log(`   Content sample: ${(entry.description || entry.summary || '').substring(0, 200)}...`);
+
     // Clean and truncate content to prevent payload size issues
     let content = entry.description || entry.summary || '';
+    
+    // If content starts with the title, remove it
+    const title = entry.title || 'Newsletter Article';
+    if (content.startsWith(title)) {
+      content = content.substring(title.length);
+    }
     
     // Remove ALL HTML tags and clean up the content
     content = content
@@ -80,8 +93,7 @@ class FeedProcessor {
     let preview = content.substring(0, 200);
     
     // Clean up the title
-    let title = entry.title || 'Newsletter Article';
-    title = title
+    let cleanTitle = title
       .replace(/<[^>]*>/g, '')
       .replace(/&nbsp;/g, ' ')
       .trim()
@@ -93,6 +105,9 @@ class FeedProcessor {
       authorName = authorName.replace(/<[^>]*>/g, '').trim();
     }
 
+    console.log(`   Clean title: ${cleanTitle}`);
+    console.log(`   Clean content preview: ${content.substring(0, 100)}...`);
+
     return {
       user_info: {
         name: authorName
@@ -101,7 +116,7 @@ class FeedProcessor {
       source: sourceName || 'Newsletter',
       cost: 10,
       preview: preview,
-      title: title,
+      title: cleanTitle,
       content: content
     };
   }
