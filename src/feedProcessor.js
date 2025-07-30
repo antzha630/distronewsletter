@@ -60,16 +60,10 @@ class FeedProcessor {
    * @returns {Object} The formatted JSON payload
    */
   convertToDistroSchema(entry, sourceName) {
-    // Debug: Log what we're getting from the feed
-    console.log(`\n🔍 Processing entry:`);
-    console.log(`   Title: ${entry.title}`);
-    console.log(`   Description length: ${(entry.description || '').length}`);
-    console.log(`   Summary length: ${(entry.summary || '').length}`);
-
-    // Get the raw content
+    // Simple, working approach from the original implementation
     let content = entry.description || entry.summary || '';
     
-    // First, remove ALL HTML tags completely
+    // Remove HTML tags
     content = content.replace(/<[^>]*>/g, '');
     
     // Remove HTML entities
@@ -81,91 +75,11 @@ class FeedProcessor {
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
       .replace(/\s+/g, ' ')
-      .trim();
-
-    // Remove the title from the beginning if it's there
-    const entryTitle = entry.title || 'Newsletter Article';
-    if (content.startsWith(entryTitle)) {
-      content = content.substring(entryTitle.length).trim();
-    }
-
-    // Find the actual newsletter content by looking for meaningful text
-    // Split into lines and find the first substantial paragraph
-    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    
-    let articleContent = '';
-    let foundArticle = false;
-    
-    for (const line of lines) {
-      // Skip CSS and technical content
-      if (line.includes('{') || line.includes('}') || line.includes('!important') || 
-          line.includes('color-scheme') || line.includes('webkit') || line.includes('ms-') ||
-          line.includes('mso-') || line.includes('background-color') || line.includes('text-decoration') ||
-          line.includes('font-size') || line.includes('margin') || line.includes('padding') ||
-          line.includes('border') || line.includes('width') || line.includes('height')) {
-        continue;
-      }
-      
-      // Skip very short lines or technical content
-      if (line.length < 20 || line.includes('px') || line.includes('em') || line.includes('rem') ||
-          line.includes('rgb') || line.includes('rgba') || line.includes('#')) {
-        continue;
-      }
-      
-      // If we find a line that looks like actual content, start collecting
-      if (line.length > 30 && !line.includes('{') && !line.includes('}') && 
-          !line.includes('!important') && !line.includes('webkit') && !line.includes('ms-')) {
-        foundArticle = true;
-        articleContent += line + ' ';
-      } else if (foundArticle && line.length > 10 && 
-                 !line.includes('{') && !line.includes('}') && 
-                 !line.includes('!important') && !line.includes('webkit')) {
-        // Continue adding content
-        articleContent += line + ' ';
-      }
-    }
-    
-    // If we didn't find good content, try a different approach
-    if (!foundArticle || articleContent.length < 50) {
-      // Look for content after common newsletter patterns
-      const patterns = [
-        /You're almost signed up/,
-        /Click this big button/,
-        /There are so many bots/,
-        /Got a tip/,
-        /Want to advertise/,
-        /Unsubscribe/,
-        /Privacy Policy/,
-        /Copyright/,
-        /Kill the Newsletter/,
-        /View this email online/
-      ];
-      
-      for (const pattern of patterns) {
-        const match = content.match(pattern);
-        if (match) {
-          const startIndex = content.indexOf(match[0]);
-          if (startIndex > 0) {
-            articleContent = content.substring(0, startIndex).trim();
-            break;
-          }
-        }
-      }
-    }
-    
-    // Clean up the final content
-    articleContent = articleContent
-      .replace(/\s+/g, ' ')
       .trim()
       .substring(0, 1500);
     
-    // If we still don't have good content, use a fallback
-    if (articleContent.length < 50) {
-      articleContent = 'Newsletter content is available. Please visit the original link to read the full article.';
-    }
-
     // Create a shorter preview
-    let preview = articleContent.substring(0, 200);
+    let preview = content.substring(0, 200);
     
     // Clean up the title
     let title = entry.title || 'Newsletter Article';
@@ -181,9 +95,6 @@ class FeedProcessor {
       }
     }
 
-    console.log(`   Clean title: ${title}`);
-    console.log(`   Clean content preview: ${articleContent.substring(0, 100)}...`);
-
     return {
       user_info: {
         name: authorName
@@ -193,7 +104,7 @@ class FeedProcessor {
       cost: 10,
       preview: preview,
       title: title,
-      content: articleContent
+      content: content
     };
   }
 
