@@ -2,86 +2,9 @@ const axios = require('axios');
 const FeedParser = require('feedparser');
 const config = require('../config');
 
-// Try to import Vercel KV, fallback to file storage for local development
-let kv = null;
-try {
-  if (process.env.VERCEL) {
-    // Only try to import KV on Vercel
-    const { kv: vercelKv } = require('@vercel/kv');
-    kv = vercelKv;
-    console.log('📝 Running on Vercel - using KV storage');
-  } else {
-    console.log('📝 Running in local mode - using file storage');
-  }
-} catch (error) {
-  console.log('📝 KV not available, using file storage:', error.message);
-}
-
 class FeedProcessor {
   constructor() {
     this.processedEntries = new Set(); // Track processed entries to avoid duplicates
-    this.storageFile = require('path').join(__dirname, '../data/processed-entries.json');
-    // Initialize storage asynchronously
-    this.initStorage();
-  }
-
-  async initStorage() {
-    try {
-      await this.loadProcessedEntries();
-    } catch (error) {
-      console.log('📚 Error initializing storage:', error.message);
-    }
-  }
-
-  /**
-   * Load processed entries from persistent storage
-   */
-  async loadProcessedEntries() {
-    try {
-      if (kv) {
-        // Use Vercel KV in production
-        console.log('📚 Using Vercel KV for persistent storage');
-      } else {
-        // Use file storage in local development
-        const fs = require('fs');
-        const path = require('path');
-        
-        // Ensure data directory exists
-        const dataDir = path.dirname(this.storageFile);
-        if (!fs.existsSync(dataDir)) {
-          fs.mkdirSync(dataDir, { recursive: true });
-        }
-
-        if (fs.existsSync(this.storageFile)) {
-          const data = fs.readFileSync(this.storageFile, 'utf8');
-          const entries = JSON.parse(data);
-          this.processedEntries = new Set(entries);
-          console.log(`📚 Loaded ${this.processedEntries.size} previously processed entries from file`);
-        }
-      }
-    } catch (error) {
-      console.log('📚 No previous processed entries found, starting fresh');
-    }
-  }
-
-  /**
-   * Save processed entries to persistent storage
-   */
-  async saveProcessedEntries() {
-    try {
-      if (kv) {
-        // Use Vercel KV in production
-        console.log('💾 Using Vercel KV for persistent storage');
-      } else {
-        // Use file storage in local development
-        const fs = require('fs');
-        const entries = Array.from(this.processedEntries);
-        fs.writeFileSync(this.storageFile, JSON.stringify(entries, null, 2));
-        console.log(`💾 Saved ${entries.length} processed entries to file`);
-      }
-    } catch (error) {
-      console.error('❌ Error saving processed entries:', error.message);
-    }
   }
 
   /**
@@ -287,9 +210,6 @@ class FeedProcessor {
         processedCount++;
         
         console.log(`✅ Successfully processed: "${entry.title}"`);
-        
-        // Save to persistent storage after each successful processing
-        await this.saveProcessedEntries();
         
         // Small delay to avoid overwhelming the API
         await new Promise(resolve => setTimeout(resolve, 1000));
