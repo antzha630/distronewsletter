@@ -2,10 +2,6 @@
 
 A proof-of-concept application that converts email newsletters into Atom feeds using [Kill the Newsletter!](https://kill-the-newsletter.com/) and then processes them into a JSON format for the Distro platform.
 
-## 🚀 Live Demo
-
-**CEO Test URL**: [https://distro-newsletter-mode.vercel.app](https://distro-newsletter-mode.vercel.app)
-
 ## Overview
 
 This application bridges the gap between email newsletters and the Distro platform by:
@@ -65,8 +61,8 @@ The application converts newsletter entries into the following JSON format:
    Create a `.env` file in the root directory:
    ```bash
    # Distro API Configuration
-   DISTRO_API_KEY=your_api_key_here
-   DISTRO_API_ENDPOINT=your_api_endpoint_here
+   DISTRO_API_KEY=YjBBLiyW7bMAwyOoXpmTOQSjWbbgmec0qz8n6xOwJD3Eh9hCTwGVPk6te1ivVUtU
+   DISTRO_API_ENDPOINT=https://pulse-chain-dc452eb2642a.herokuapp.com/api/external/news
    
    # App Configuration
    PORT=3000
@@ -90,41 +86,15 @@ The application converts newsletter entries into the following JSON format:
    npm run dev
    ```
 
-## Deployment to Vercel
-
-### Quick Deploy
-
-1. **Install Vercel CLI**
-   ```bash
-   npm i -g vercel
-   ```
-
-2. **Deploy to Vercel**
-   ```bash
-   vercel
-   ```
-
-3. **Follow the prompts** and your app will be live!
-
-### Manual Deploy
-
-1. **Push to GitHub**
-2. **Connect to Vercel** from the dashboard
-3. **Import your repository**
-4. **Set environment variables** in Vercel dashboard:
-   - `DISTRO_API_KEY`: Your Distro API key
-   - `DISTRO_API_ENDPOINT`: Your Distro API endpoint
-5. **Deploy automatically**
-
 ## Usage
 
 ### Web Interface
 
-Once the application is running, visit the web interface to:
+Once the application is running, visit `http://localhost:3000` to access the web interface. You can:
 
-- **Test feed processing manually** - Click "Process Newsletters Now"
+- **Run feed processing manually** - Click "Run Feed Processing Now"
 - **Test individual feeds** - Add a Kill the Newsletter! feed URL and source name
-- **Monitor the application status**
+- **Monitor configuration** - View current settings and status
 
 ### API Endpoints
 
@@ -168,8 +138,8 @@ As mentioned in the documentation, you can use the workaround approach:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DISTRO_API_KEY` | Your Distro API key | (required) |
-| `DISTRO_API_ENDPOINT` | Distro API endpoint | (required) |
+| `DISTRO_API_KEY` | Your Distro API key | `YjBBLiyW7bMAwyOoXpmTOQSjWbbgmec0qz8n6xOwJD3Eh9hCTwGVPk6te1ivVUtU` |
+| `DISTRO_API_ENDPOINT` | Distro API endpoint | `https://pulse-chain-dc452eb2642a.herokuapp.com/api/external/news` |
 | `PORT` | Application port | `3000` |
 | `LOG_LEVEL` | Logging level | `info` |
 | `CRON_SCHEDULE` | Cron schedule for processing | `*/5 * * * *` (every 5 minutes) |
@@ -189,12 +159,12 @@ As mentioned in the documentation, you can use the workaround approach:
 │                 │    │ Newsletter!      │    │ Newsletter Mode │
 └─────────────────┘    │ (Atom Feed)      │    │                 │
                        └──────────────────┘    └─────────────────┘
-                                                        │
-                                                        ▼
-                                               ┌─────────────────┐
-                                               │ Distro API      │
-                                               │ (JSON Payload)  │
-                                               └─────────────────┘
+                                                         │
+                                                         ▼
+                                                ┌─────────────────┐
+                                                │ Distro API      │
+                                                │ (JSON Payload)  │
+                                                └─────────────────┘
 ```
 
 ## Troubleshooting
@@ -225,7 +195,6 @@ distronewsletter/
 ├── config.js              # Configuration management
 ├── index.js               # Main application entry point
 ├── package.json           # Dependencies and scripts
-├── vercel.json           # Vercel deployment config
 └── README.md             # This file
 ```
 

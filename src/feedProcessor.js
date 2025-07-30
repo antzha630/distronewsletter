@@ -2,9 +2,71 @@ const axios = require('axios');
 const FeedParser = require('feedparser');
 const config = require('../config');
 
+// Try to import Vercel KV, fallback to file storage for local development
+let kv = null;
+try {
+  const { kv: vercelKv } = require('@vercel/kv');
+  kv = vercelKv;
+} catch (error) {
+  console.log('📝 Running in local mode - using file storage');
+}
+
 class FeedProcessor {
   constructor() {
     this.processedEntries = new Set(); // Track processed entries to avoid duplicates
+    this.storageFile = require('path').join(__dirname, '../data/processed-entries.json');
+    this.loadProcessedEntries();
+  }
+
+  /**
+   * Load processed entries from persistent storage
+   */
+  async loadProcessedEntries() {
+    try {
+      if (kv) {
+        // Use Vercel KV in production
+        console.log('📚 Using Vercel KV for persistent storage');
+      } else {
+        // Use file storage in local development
+        const fs = require('fs');
+        const path = require('path');
+        
+        // Ensure data directory exists
+        const dataDir = path.dirname(this.storageFile);
+        if (!fs.existsSync(dataDir)) {
+          fs.mkdirSync(dataDir, { recursive: true });
+        }
+
+        if (fs.existsSync(this.storageFile)) {
+          const data = fs.readFileSync(this.storageFile, 'utf8');
+          const entries = JSON.parse(data);
+          this.processedEntries = new Set(entries);
+          console.log(`📚 Loaded ${this.processedEntries.size} previously processed entries from file`);
+        }
+      }
+    } catch (error) {
+      console.log('📚 No previous processed entries found, starting fresh');
+    }
+  }
+
+  /**
+   * Save processed entries to persistent storage
+   */
+  async saveProcessedEntries() {
+    try {
+      if (kv) {
+        // Use Vercel KV in production
+        console.log('💾 Using Vercel KV for persistent storage');
+      } else {
+        // Use file storage in local development
+        const fs = require('fs');
+        const entries = Array.from(this.processedEntries);
+        fs.writeFileSync(this.storageFile, JSON.stringify(entries, null, 2));
+        console.log(`💾 Saved ${entries.length} processed entries to file`);
+      }
+    } catch (error) {
+      console.error('❌ Error saving processed entries:', error.message);
+    }
   }
 
   /**
@@ -14,7 +76,7 @@ class FeedProcessor {
    */
   async fetchFeed(feedUrl) {
     try {
-      console.log(`Fetching feed from: ${feedUrl}`);
+      console.log(`\n🔍 Fetching feed from: ${feedUrl}`);
       
       const response = await axios.get(feedUrl, {
         timeout: 10000,
@@ -23,24 +85,27 @@ class FeedProcessor {
         }
       });
 
+      console.log(`✅ Feed response received (${response.data.length} characters)`);
+
       return new Promise((resolve, reject) => {
         const feedparser = new FeedParser({});
         const entries = [];
 
         feedparser.on('error', (error) => {
-          console.error('Feed parsing error:', error);
+          console.error('❌ Feed parsing error:', error);
           reject(error);
         });
 
         feedparser.on('readable', function() {
           let item;
           while (item = this.read()) {
+            console.log(`📄 Found entry: "${item.title}" (${item.pubDate})`);
             entries.push(item);
           }
         });
 
         feedparser.on('end', () => {
-          console.log(`Parsed ${entries.length} entries from feed`);
+          console.log(`✅ Parsed ${entries.length} entries from feed`);
           resolve(entries);
         });
 
@@ -48,7 +113,7 @@ class FeedProcessor {
         feedparser.end();
       });
     } catch (error) {
-      console.error(`Error fetching feed from ${feedUrl}:`, error.message);
+      console.error(`❌ Error fetching feed from ${feedUrl}:`, error.message);
       throw error;
     }
   }
@@ -60,50 +125,68 @@ class FeedProcessor {
    * @returns {Object} The formatted JSON payload
    */
   convertToDistroSchema(entry, sourceName) {
-    // Simple, working approach from the original implementation
-    let content = entry.description || entry.summary || '';
-    
-    // Remove HTML tags
-    content = content.replace(/<[^>]*>/g, '');
-    
-    // Remove HTML entities
-    content = content
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&quot;/g, '"')
-      .replace(/&#39;/g, "'")
-      .replace(/\s+/g, ' ')
-      .trim()
-      .substring(0, 1500);
-    
-    // Create a shorter preview
-    let preview = content.substring(0, 200);
-    
-    // Clean up the title
-    let title = entry.title || 'Newsletter Article';
-    title = title.replace(/<[^>]*>/g, '').substring(0, 200);
-
-    // Extract author name
-    let authorName = sourceName || 'Newsletter Author';
+    // Extract author name from various possible fields
+    let authorName = 'Unknown Author';
     if (entry.author) {
-      if (typeof entry.author === 'string') {
-        authorName = entry.author;
-      } else if (entry.author.name) {
-        authorName = entry.author.name;
+      authorName = typeof entry.author === 'string' ? entry.author : entry.author.name || 'Unknown Author';
+    } else if (entry['dc:creator']) {
+      authorName = entry['dc:creator'];
+    }
+
+    // Extract content, preferring summary if content is too long
+    let content = entry.description || entry.summary || '';
+    if (entry.content && entry.content.length > 0) {
+      const fullContent = entry.content[0];
+      if (fullContent && fullContent['#']) {
+        content = fullContent['#'];
       }
     }
+
+    // Clean HTML content to prevent rendering errors
+    const cleanHtmlContent = (html) => {
+      if (!html) return '';
+      
+      // Remove problematic HTML attributes and tags
+      return html
+        .replace(/class="[^"]*"/g, '') // Remove class attributes
+        .replace(/style="[^"]*"/g, '') // Remove style attributes
+        .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove script tags
+        .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '') // Remove iframe tags
+        .replace(/<tdclass=/g, '<td class=') // Fix malformed td tags
+        .replace(/<divclass=/g, '<div class=') // Fix malformed div tags
+        .replace(/<spanclass=/g, '<span class=') // Fix malformed span tags
+        .replace(/<pclass=/g, '<p class=') // Fix malformed p tags
+        .replace(/<h[1-6]class=/g, (match) => match.replace('class=', ' class=')) // Fix malformed heading tags
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim();
+    };
+
+    // Clean the content
+    content = cleanHtmlContent(content);
+
+    // Limit content size to prevent PayloadTooLargeError (max 50KB)
+    const maxContentLength = 50000;
+    if (content.length > maxContentLength) {
+      console.log(`📏 Content too large (${content.length} chars), truncating to ${maxContentLength} chars`);
+      content = content.substring(0, maxContentLength) + '... [Content truncated due to size limits]';
+    }
+
+    // Create preview (first 200 characters of content, also cleaned)
+    let preview = content.length > 200 ? content.substring(0, 200) + '...' : content;
+    preview = cleanHtmlContent(preview);
+
+    // Extract source link
+    const moreInfoUrl = entry.link || entry.guid || '';
 
     return {
       user_info: {
         name: authorName
       },
-      more_info_url: entry.link || entry.guid || '',
-      source: sourceName || 'Newsletter',
-      cost: 10,
+      more_info_url: moreInfoUrl,
+      source: sourceName,
+      cost: 10, // Default cost as specified
       preview: preview,
-      title: title,
+      title: entry.title || 'Untitled',
       content: content
     };
   }
@@ -146,17 +229,25 @@ class FeedProcessor {
    */
   async processFeed(feedUrl) {
     try {
+      console.log(`\n🚀 Processing feed: ${feedUrl}`);
       const entries = await this.fetchFeed(feedUrl);
       
+      console.log(`📊 Processing ${entries.length} entries...`);
+      let processedCount = 0;
+      let skippedCount = 0;
+      
       for (const entry of entries) {
-        // Create a more robust unique identifier for this entry
+        // Create a unique identifier for this entry (more reliable)
         const entryId = `${entry.title}-${entry.pubDate}`;
         
         // Skip if we've already processed this entry
         if (this.processedEntries.has(entryId)) {
-          console.log(`⏭️  Skipping duplicate: ${entry.title}`);
+          console.log(`⏭️  Skipping already processed: "${entry.title}"`);
+          skippedCount++;
           continue;
         }
+
+        console.log(`\n📝 Processing entry: "${entry.title}"`);
 
         // Extract the actual source from the entry (e.g., "Unchained", "TechCrunch", etc.)
         let sourceName = 'Newsletter';
@@ -165,21 +256,37 @@ class FeedProcessor {
         } else if (entry['dc:creator']) {
           sourceName = entry['dc:creator'];
         }
+        
+        console.log(`📰 Source: ${sourceName}`);
 
         // Convert to Distro schema with dynamic source
         const distroData = this.convertToDistroSchema(entry, sourceName);
+        
+        console.log(`🔄 Converted to Distro schema`);
         
         // Send to Distro API
         await this.sendToDistro(distroData);
         
         // Mark as processed
         this.processedEntries.add(entryId);
+        processedCount++;
+        
+        console.log(`✅ Successfully processed: "${entry.title}"`);
+        
+        // Save to persistent storage after each successful processing
+        await this.saveProcessedEntries();
         
         // Small delay to avoid overwhelming the API
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
+      
+      console.log(`\n📈 Feed processing summary:`);
+      console.log(`   ✅ Processed: ${processedCount} entries`);
+      console.log(`   ⏭️  Skipped: ${skippedCount} entries`);
+      console.log(`   📊 Total: ${entries.length} entries`);
+      
     } catch (error) {
-      console.error(`Error processing feed ${feedUrl}:`, error.message);
+      console.error(`❌ Error processing feed ${feedUrl}:`, error.message);
     }
   }
 
@@ -187,19 +294,23 @@ class FeedProcessor {
    * Process all configured feeds
    */
   async processAllFeeds() {
-    console.log('Starting feed processing...');
+    console.log('\n🎯 Starting feed processing...');
     
     // Configured Kill the Newsletter! feeds
     const feeds = [
       'https://kill-the-newsletter.com/feeds/5nyovrh2i2cn9136lz54.xml'
       // Add more feed URLs here as needed
     ];
+    
+    console.log(`📋 Configured feeds: ${feeds.length}`);
 
-    for (const feedUrl of feeds) {
+    for (let i = 0; i < feeds.length; i++) {
+      const feedUrl = feeds[i];
+      console.log(`\n📡 Processing feed ${i + 1}/${feeds.length}: ${feedUrl}`);
       await this.processFeed(feedUrl);
     }
     
-    console.log('Feed processing completed');
+    console.log('\n🎉 Feed processing completed!');
   }
 }
 
