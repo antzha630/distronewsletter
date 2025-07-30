@@ -1,7 +1,7 @@
 {
   "name": "distro-newsletter-mode",
   "version": "1.0.0",
-  "description": "Convert newsletters to Atom feeds and process them for Distro",
+  "description": "Convert newsletters to Atom feeds and process them for Distro - Vercel deployment fix",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
