@@ -74,6 +74,12 @@ class FeedProcessor {
     const title = entry.title || 'Newsletter Article';
     if (content.startsWith(title)) {
       content = content.substring(title.length);
+    } else if (content.includes(title + '96')) {
+      // Handle case where title is followed by '96' and then content
+      content = content.substring(content.indexOf(title + '96') + title.length + 2);
+    } else if (content.includes(title + ' ')) {
+      // Handle case where title is followed by space and then content
+      content = content.substring(content.indexOf(title + ' ') + title.length + 1);
     }
     
     // Remove ALL HTML tags and clean up the content
