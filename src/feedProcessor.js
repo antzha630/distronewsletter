@@ -67,36 +67,98 @@ class FeedProcessor {
     console.log(`   Summary length: ${(entry.summary || '').length}`);
     console.log(`   Content sample: ${(entry.description || entry.summary || '').substring(0, 200)}...`);
 
-    // Clean and truncate content to prevent payload size issues
+    // Get the raw content
     let content = entry.description || entry.summary || '';
     
-    // If content starts with the title, remove it
-    const title = entry.title || 'Newsletter Article';
-    if (content.startsWith(title)) {
-      content = content.substring(title.length);
-    } else if (content.includes(title + '96')) {
-      // Handle case where title is followed by '96' and then content
-      content = content.substring(content.indexOf(title + '96') + title.length + 2);
-    } else if (content.includes(title + ' ')) {
-      // Handle case where title is followed by space and then content
-      content = content.substring(content.indexOf(title + ' ') + title.length + 1);
-    }
+    // First, remove ALL HTML tags completely
+    content = content.replace(/<[^>]*>/g, '');
     
-    // Remove ALL HTML tags and clean up the content
+    // Remove HTML entities
     content = content
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/&nbsp;/g, ' ') // Replace HTML entities
+      .replace(/&nbsp;/g, ' ')
       .replace(/&amp;/g, '&')
       .replace(/&lt;/g, '<')
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
+      .replace(/&#8202;/g, ' ')
       .replace(/\s+/g, ' ') // Remove extra whitespace
-      .trim()
-      .substring(0, 1500); // Shorter limit to be safe
+      .trim();
     
-    // Create a much shorter preview
-    let preview = content.substring(0, 200);
+    // Now try to find the actual article content
+    const title = entry.title || 'Newsletter Article';
+    
+    // Look for the actual article text after the title and CSS
+    let articleContent = '';
+    
+    // Method 1: Look for content after the title + "96" pattern
+    const titlePattern = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex
+    const titleWith96Pattern = new RegExp(`${titlePattern}96\\s*:root`, 'i');
+    const match = content.match(titleWith96Pattern);
+    
+    if (match) {
+      // Find where the CSS ends and real content begins
+      const cssEndPattern = /}\s*([A-Za-z])/;
+      const cssEndMatch = content.match(cssEndPattern);
+      
+      if (cssEndMatch) {
+        // Extract content after CSS
+        const cssEndIndex = content.indexOf(cssEndMatch[1]);
+        articleContent = content.substring(cssEndIndex);
+      } else {
+        // Fallback: remove everything before the first meaningful text
+        const meaningfulTextMatch = content.match(/([A-Z][a-z]+.*?)(?=\s*$)/);
+        if (meaningfulTextMatch) {
+          articleContent = meaningfulTextMatch[1];
+        }
+      }
+    } else {
+      // Method 2: Look for common newsletter content patterns
+      const contentPatterns = [
+        /(?:Hi there|Hello|Good morning|Welcome).*?(?=\s*$)/i,
+        /(?:Plus|Also|In today's|Today's).*?(?=\s*$)/i,
+        /(?:View this email|Read more|Continue reading).*?(?=\s*$)/i
+      ];
+      
+      for (const pattern of contentPatterns) {
+        const match = content.match(pattern);
+        if (match) {
+          articleContent = match[0];
+          break;
+        }
+      }
+    }
+    
+    // If we still don't have content, use a simple approach
+    if (!articleContent) {
+      // Remove the title and any CSS-like content
+      let cleanContent = content;
+      if (cleanContent.includes(title)) {
+        cleanContent = cleanContent.replace(title, '');
+      }
+      
+      // Remove CSS patterns
+      cleanContent = cleanContent.replace(/:\s*{[^}]*}/g, '');
+      cleanContent = cleanContent.replace(/[a-z-]+\s*:\s*[^;]+;/g, '');
+      cleanContent = cleanContent.replace(/@media[^{]*{[^}]*}/g, '');
+      
+      // Find the first meaningful sentence
+      const sentences = cleanContent.split(/[.!?]+/).filter(s => s.trim().length > 10);
+      if (sentences.length > 0) {
+        articleContent = sentences.slice(0, 3).join('. ') + '.';
+      } else {
+        articleContent = cleanContent.substring(0, 500);
+      }
+    }
+    
+    // Clean up the final content
+    articleContent = articleContent
+      .replace(/\s+/g, ' ')
+      .trim()
+      .substring(0, 1500);
+    
+    // Create a shorter preview
+    let preview = articleContent.substring(0, 200);
     
     // Clean up the title
     let cleanTitle = title
@@ -112,7 +174,7 @@ class FeedProcessor {
     }
 
     console.log(`   Clean title: ${cleanTitle}`);
-    console.log(`   Clean content preview: ${content.substring(0, 100)}...`);
+    console.log(`   Clean content preview: ${articleContent.substring(0, 100)}...`);
 
     return {
       user_info: {
@@ -123,7 +185,7 @@ class FeedProcessor {
       cost: 10,
       preview: preview,
       title: cleanTitle,
-      content: content
+      content: articleContent
     };
   }
 
