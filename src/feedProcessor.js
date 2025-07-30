@@ -65,7 +65,6 @@ class FeedProcessor {
     console.log(`   Title: ${entry.title}`);
     console.log(`   Description length: ${(entry.description || '').length}`);
     console.log(`   Summary length: ${(entry.summary || '').length}`);
-    console.log(`   Content sample: ${(entry.description || entry.summary || '').substring(0, 200)}...`);
 
     // Get the raw content
     let content = entry.description || entry.summary || '';
@@ -81,73 +80,76 @@ class FeedProcessor {
       .replace(/&gt;/g, '>')
       .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'")
-      .replace(/&#8202;/g, ' ')
-      .replace(/\s+/g, ' ') // Remove extra whitespace
+      .replace(/\s+/g, ' ')
       .trim();
+
+    // Remove the title from the beginning if it's there
+    const entryTitle = entry.title || 'Newsletter Article';
+    if (content.startsWith(entryTitle)) {
+      content = content.substring(entryTitle.length).trim();
+    }
+
+    // Find the actual newsletter content by looking for meaningful text
+    // Split into lines and find the first substantial paragraph
+    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     
-    // Now try to find the actual article content
-    const title = entry.title || 'Newsletter Article';
-    
-    // Look for the actual article text after the title and CSS
     let articleContent = '';
+    let foundArticle = false;
     
-    // Method 1: Look for content after the title + "96" pattern
-    const titlePattern = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex
-    const titleWith96Pattern = new RegExp(`${titlePattern}96\\s*:root`, 'i');
-    const match = content.match(titleWith96Pattern);
-    
-    if (match) {
-      // Find where the CSS ends and real content begins
-      const cssEndPattern = /}\s*([A-Za-z])/;
-      const cssEndMatch = content.match(cssEndPattern);
-      
-      if (cssEndMatch) {
-        // Extract content after CSS
-        const cssEndIndex = content.indexOf(cssEndMatch[1]);
-        articleContent = content.substring(cssEndIndex);
-      } else {
-        // Fallback: remove everything before the first meaningful text
-        const meaningfulTextMatch = content.match(/([A-Z][a-z]+.*?)(?=\s*$)/);
-        if (meaningfulTextMatch) {
-          articleContent = meaningfulTextMatch[1];
-        }
+    for (const line of lines) {
+      // Skip CSS and technical content
+      if (line.includes('{') || line.includes('}') || line.includes('!important') || 
+          line.includes('color-scheme') || line.includes('webkit') || line.includes('ms-') ||
+          line.includes('mso-') || line.includes('background-color') || line.includes('text-decoration') ||
+          line.includes('font-size') || line.includes('margin') || line.includes('padding') ||
+          line.includes('border') || line.includes('width') || line.includes('height')) {
+        continue;
       }
-    } else {
-      // Method 2: Look for common newsletter content patterns
-      const contentPatterns = [
-        /(?:Hi there|Hello|Good morning|Welcome).*?(?=\s*$)/i,
-        /(?:Plus|Also|In today's|Today's).*?(?=\s*$)/i,
-        /(?:View this email|Read more|Continue reading).*?(?=\s*$)/i
-      ];
       
-      for (const pattern of contentPatterns) {
-        const match = content.match(pattern);
-        if (match) {
-          articleContent = match[0];
-          break;
-        }
+      // Skip very short lines or technical content
+      if (line.length < 20 || line.includes('px') || line.includes('em') || line.includes('rem') ||
+          line.includes('rgb') || line.includes('rgba') || line.includes('#')) {
+        continue;
+      }
+      
+      // If we find a line that looks like actual content, start collecting
+      if (line.length > 30 && !line.includes('{') && !line.includes('}') && 
+          !line.includes('!important') && !line.includes('webkit') && !line.includes('ms-')) {
+        foundArticle = true;
+        articleContent += line + ' ';
+      } else if (foundArticle && line.length > 10 && 
+                 !line.includes('{') && !line.includes('}') && 
+                 !line.includes('!important') && !line.includes('webkit')) {
+        // Continue adding content
+        articleContent += line + ' ';
       }
     }
     
-    // If we still don't have content, use a simple approach
-    if (!articleContent) {
-      // Remove the title and any CSS-like content
-      let cleanContent = content;
-      if (cleanContent.includes(title)) {
-        cleanContent = cleanContent.replace(title, '');
-      }
+    // If we didn't find good content, try a different approach
+    if (!foundArticle || articleContent.length < 50) {
+      // Look for content after common newsletter patterns
+      const patterns = [
+        /You're almost signed up/,
+        /Click this big button/,
+        /There are so many bots/,
+        /Got a tip/,
+        /Want to advertise/,
+        /Unsubscribe/,
+        /Privacy Policy/,
+        /Copyright/,
+        /Kill the Newsletter/,
+        /View this email online/
+      ];
       
-      // Remove CSS patterns
-      cleanContent = cleanContent.replace(/:\s*{[^}]*}/g, '');
-      cleanContent = cleanContent.replace(/[a-z-]+\s*:\s*[^;]+;/g, '');
-      cleanContent = cleanContent.replace(/@media[^{]*{[^}]*}/g, '');
-      
-      // Find the first meaningful sentence
-      const sentences = cleanContent.split(/[.!?]+/).filter(s => s.trim().length > 10);
-      if (sentences.length > 0) {
-        articleContent = sentences.slice(0, 3).join('. ') + '.';
-      } else {
-        articleContent = cleanContent.substring(0, 500);
+      for (const pattern of patterns) {
+        const match = content.match(pattern);
+        if (match) {
+          const startIndex = content.indexOf(match[0]);
+          if (startIndex > 0) {
+            articleContent = content.substring(0, startIndex).trim();
+            break;
+          }
+        }
       }
     }
     
@@ -157,23 +159,29 @@ class FeedProcessor {
       .trim()
       .substring(0, 1500);
     
+    // If we still don't have good content, use a fallback
+    if (articleContent.length < 50) {
+      articleContent = 'Newsletter content is available. Please visit the original link to read the full article.';
+    }
+
     // Create a shorter preview
     let preview = articleContent.substring(0, 200);
     
     // Clean up the title
-    let cleanTitle = title
-      .replace(/<[^>]*>/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .trim()
-      .substring(0, 100);
+    let title = entry.title || 'Newsletter Article';
+    title = title.replace(/<[^>]*>/g, '').substring(0, 200);
 
-    // Clean up author name
-    let authorName = entry.author || sourceName || 'Newsletter Author';
-    if (typeof authorName === 'string') {
-      authorName = authorName.replace(/<[^>]*>/g, '').trim();
+    // Extract author name
+    let authorName = sourceName || 'Newsletter Author';
+    if (entry.author) {
+      if (typeof entry.author === 'string') {
+        authorName = entry.author;
+      } else if (entry.author.name) {
+        authorName = entry.author.name;
+      }
     }
 
-    console.log(`   Clean title: ${cleanTitle}`);
+    console.log(`   Clean title: ${title}`);
     console.log(`   Clean content preview: ${articleContent.substring(0, 100)}...`);
 
     return {
@@ -184,7 +192,7 @@ class FeedProcessor {
       source: sourceName || 'Newsletter',
       cost: 10,
       preview: preview,
-      title: cleanTitle,
+      title: title,
       content: articleContent
     };
   }
