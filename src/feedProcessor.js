@@ -60,38 +60,28 @@ class FeedProcessor {
    * @returns {Object} The formatted JSON payload
    */
   convertToDistroSchema(entry, sourceName) {
-    // Extract author name from various possible fields
-    let authorName = 'Unknown Author';
-    if (entry.author) {
-      authorName = typeof entry.author === 'string' ? entry.author : entry.author.name || 'Unknown Author';
-    } else if (entry['dc:creator']) {
-      authorName = entry['dc:creator'];
-    }
-
-    // Extract content, preferring summary if content is too long
+    // Clean and truncate content to prevent payload size issues
     let content = entry.description || entry.summary || '';
-    if (entry.content && entry.content.length > 0) {
-      const fullContent = entry.content[0];
-      if (fullContent && fullContent['#']) {
-        content = fullContent['#'];
-      }
-    }
-
-    // Create preview (first 200 characters of content)
-    const preview = content.length > 200 ? content.substring(0, 200) + '...' : content;
-
-    // Extract source link
-    const moreInfoUrl = entry.link || entry.guid || '';
+    
+    // Remove HTML tags and truncate content
+    content = content.replace(/<[^>]*>/g, '').substring(0, 2000);
+    
+    // Create a shorter preview
+    let preview = content.substring(0, 500);
+    
+    // Clean up the title
+    let title = entry.title || 'Newsletter Article';
+    title = title.replace(/<[^>]*>/g, '').substring(0, 200);
 
     return {
       user_info: {
-        name: authorName
+        name: entry.author || sourceName || 'Newsletter Author'
       },
-      more_info_url: moreInfoUrl,
-      source: sourceName,
-      cost: 10, // Default cost as specified
+      more_info_url: entry.link || entry.guid || '',
+      source: sourceName || 'Newsletter',
+      cost: 10,
       preview: preview,
-      title: entry.title || 'Untitled',
+      title: title,
       content: content
     };
   }
