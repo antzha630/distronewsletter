@@ -1,10 +1,49 @@
 const axios = require('axios');
 const FeedParser = require('feedparser');
+const fs = require('fs');
+const path = require('path');
 const config = require('../config');
 
 class FeedProcessor {
   constructor() {
     this.processedEntries = new Set(); // Track processed entries to avoid duplicates
+    this.storageFile = path.join(__dirname, '../data/processed-entries.json');
+    this.loadProcessedEntries();
+  }
+
+  /**
+   * Load processed entries from persistent storage
+   */
+  loadProcessedEntries() {
+    try {
+      // Ensure data directory exists
+      const dataDir = path.dirname(this.storageFile);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+
+      if (fs.existsSync(this.storageFile)) {
+        const data = fs.readFileSync(this.storageFile, 'utf8');
+        const entries = JSON.parse(data);
+        this.processedEntries = new Set(entries);
+        console.log(`📚 Loaded ${this.processedEntries.size} previously processed entries`);
+      }
+    } catch (error) {
+      console.log('📚 No previous processed entries found, starting fresh');
+    }
+  }
+
+  /**
+   * Save processed entries to persistent storage
+   */
+  saveProcessedEntries() {
+    try {
+      const entries = Array.from(this.processedEntries);
+      fs.writeFileSync(this.storageFile, JSON.stringify(entries, null, 2));
+      console.log(`💾 Saved ${entries.length} processed entries to storage`);
+    } catch (error) {
+      console.error('❌ Error saving processed entries:', error.message);
+    }
   }
 
   /**
@@ -210,6 +249,9 @@ class FeedProcessor {
         processedCount++;
         
         console.log(`✅ Successfully processed: "${entry.title}"`);
+        
+        // Save to persistent storage after each successful processing
+        this.saveProcessedEntries();
         
         // Small delay to avoid overwhelming the API
         await new Promise(resolve => setTimeout(resolve, 1000));

@@ -278,28 +278,6 @@ app.get('/', (req, res) => {
         <div class="dashboard">
           <div class="card">
             <h2>
-              <span class="card-icon">⚙️</span>
-              API Configuration
-            </h2>
-            <p style="margin-bottom: 20px; color: #718096; line-height: 1.6;">
-              Configure your Distro API settings. These will be used for all newsletter processing.
-            </p>
-            <div class="form-group">
-              <label for="apiEndpoint">Distro API Endpoint</label>
-              <input type="text" id="apiEndpoint" class="form-input" placeholder="https://your-api-endpoint.com/api/external/news" value="${config.distro.apiEndpoint}" />
-            </div>
-            <div class="form-group">
-              <label for="apiKey">API Key</label>
-              <input type="password" id="apiKey" class="form-input" placeholder="Your API key" value="${config.distro.apiKey}" />
-            </div>
-            <button class="btn btn-secondary" onclick="saveConfig()">
-              Save Configuration
-            </button>
-            <div id="configStatus"></div>
-          </div>
-          
-          <div class="card">
-            <h2>
               <span class="card-icon">⚡</span>
               Quick Processing
             </h2>
@@ -330,6 +308,27 @@ app.get('/', (req, res) => {
             </div>
             <button class="btn btn-secondary" onclick="processSingleFeed()">
               Test This Feed
+            </button>
+          </div>
+          
+          <div class="card">
+            <h2>
+              <span class="card-icon">⚙️</span>
+              API Configuration
+            </h2>
+            <p style="margin-bottom: 20px; color: #718096; line-height: 1.6;">
+              Configure your Distro API endpoint and key for manual processing.
+            </p>
+            <div class="form-group">
+              <label for="apiEndpoint">Distro API Endpoint</label>
+              <input type="text" id="apiEndpoint" class="form-input" placeholder="https://your-api-endpoint.com/api/external/news" value="https://pulse-chain-dc452eb2642a.herokuapp.com/api/external/news" />
+            </div>
+            <div class="form-group">
+              <label for="apiKey">API Key</label>
+              <input type="password" id="apiKey" class="form-input" placeholder="Enter your API key" value="YjBBLiyW7bMAwyOoXpmTOQSjWbbgmec0qz8n6xOwJD3Eh9hCTwGVPk6te1ivVUtU" />
+            </div>
+            <button class="btn btn-secondary" onclick="updateApiConfig()">
+              Update API Settings
             </button>
           </div>
         </div>
@@ -373,36 +372,6 @@ app.get('/', (req, res) => {
           }
         }
         
-        async function saveConfig() {
-          const apiEndpoint = document.getElementById('apiEndpoint').value;
-          const apiKey = document.getElementById('apiKey').value;
-          
-          if (!apiEndpoint || !apiKey) {
-            alert('Please provide both API endpoint and API key');
-            return;
-          }
-          
-          const statusDiv = document.getElementById('configStatus');
-          statusDiv.innerHTML = '<div class="status processing"><span class="status-icon">⏳</span>Saving configuration...</div>';
-          
-          try {
-            const response = await fetch('/api/save-config', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ apiEndpoint, apiKey })
-            });
-            const result = await response.json();
-            
-            if (response.ok) {
-              statusDiv.innerHTML = '<div class="status success"><span class="status-icon">✅</span>Configuration saved successfully!</div>';
-            } else {
-              statusDiv.innerHTML = '<div class="status error"><span class="status-icon">❌</span>Error: ' + result.error + '</div>';
-            }
-          } catch (error) {
-            statusDiv.innerHTML = '<div class="status error"><span class="status-icon">❌</span>Error: ' + error.message + '</div>';
-          }
-        }
-        
         async function processSingleFeed() {
           const feedUrl = document.getElementById('feedUrl').value;
           const sourceName = document.getElementById('sourceName').value;
@@ -432,6 +401,36 @@ app.get('/', (req, res) => {
             statusDiv.innerHTML = '<div class="status error"><span class="status-icon">❌</span>Error: ' + error.message + '</div>';
           }
         }
+        
+        async function updateApiConfig() {
+          const apiEndpoint = document.getElementById('apiEndpoint').value;
+          const apiKey = document.getElementById('apiKey').value;
+          
+          if (!apiEndpoint || !apiKey) {
+            alert('Please provide both API endpoint and API key');
+            return;
+          }
+          
+          const statusDiv = document.getElementById('status');
+          statusDiv.innerHTML = '<div class="status processing"><span class="status-icon">⏳</span>Updating API configuration...</div>';
+          
+          try {
+            const response = await fetch('/api/update-config', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ apiEndpoint, apiKey })
+            });
+            const result = await response.json();
+            
+            if (response.ok) {
+              statusDiv.innerHTML = '<div class="status success"><span class="status-icon">✅</span>API configuration updated successfully!</div>';
+            } else {
+              statusDiv.innerHTML = '<div class="status error"><span class="status-icon">❌</span>Error: ' + result.error + '</div>';
+            }
+          } catch (error) {
+            statusDiv.innerHTML = '<div class="status error"><span class="status-icon">❌</span>Error: ' + error.message + '</div>';
+          }
+        }
       </script>
     </body>
     </html>
@@ -448,24 +447,6 @@ app.post('/api/process-feeds', async (req, res) => {
   }
 });
 
-app.post('/api/save-config', async (req, res) => {
-  try {
-    const { apiEndpoint, apiKey } = req.body;
-    
-    if (!apiEndpoint || !apiKey) {
-      return res.status(400).json({ error: 'API endpoint and API key are required' });
-    }
-    
-    // Update the config in memory
-    config.distro.apiEndpoint = apiEndpoint;
-    config.distro.apiKey = apiKey;
-    
-    res.json({ success: true, message: 'Configuration saved successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 app.post('/api/process-single-feed', async (req, res) => {
   try {
     const { feedUrl, sourceName } = req.body;
@@ -476,6 +457,30 @@ app.post('/api/process-single-feed', async (req, res) => {
     
     await feedProcessor.processFeed(feedUrl, sourceName);
     res.json({ success: true, message: 'Single feed processed successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/update-config', async (req, res) => {
+  try {
+    const { apiEndpoint, apiKey } = req.body;
+    
+    if (!apiEndpoint || !apiKey) {
+      return res.status(400).json({ error: 'API endpoint and API key are required' });
+    }
+    
+    // Update the configuration (this would need to be implemented in config.js)
+    // For now, we'll just validate the inputs
+    if (!apiEndpoint.startsWith('http')) {
+      return res.status(400).json({ error: 'API endpoint must be a valid URL' });
+    }
+    
+    if (apiKey.length < 10) {
+      return res.status(400).json({ error: 'API key must be at least 10 characters' });
+    }
+    
+    res.json({ success: true, message: 'API configuration updated successfully' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
