@@ -63,19 +63,39 @@ class FeedProcessor {
     // Clean and truncate content to prevent payload size issues
     let content = entry.description || entry.summary || '';
     
-    // Remove HTML tags and truncate content
-    content = content.replace(/<[^>]*>/g, '').substring(0, 2000);
+    // Remove ALL HTML tags and clean up the content
+    content = content
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/&nbsp;/g, ' ') // Replace HTML entities
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/\s+/g, ' ') // Remove extra whitespace
+      .trim()
+      .substring(0, 1500); // Shorter limit to be safe
     
-    // Create a shorter preview
-    let preview = content.substring(0, 500);
+    // Create a much shorter preview
+    let preview = content.substring(0, 200);
     
     // Clean up the title
     let title = entry.title || 'Newsletter Article';
-    title = title.replace(/<[^>]*>/g, '').substring(0, 200);
+    title = title
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .trim()
+      .substring(0, 100);
+
+    // Clean up author name
+    let authorName = entry.author || sourceName || 'Newsletter Author';
+    if (typeof authorName === 'string') {
+      authorName = authorName.replace(/<[^>]*>/g, '').trim();
+    }
 
     return {
       user_info: {
-        name: entry.author || sourceName || 'Newsletter Author'
+        name: authorName
       },
       more_info_url: entry.link || entry.guid || '',
       source: sourceName || 'Newsletter',
