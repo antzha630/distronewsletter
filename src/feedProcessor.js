@@ -5,17 +5,32 @@ const config = require('../config');
 // Try to import Vercel KV, fallback to file storage for local development
 let kv = null;
 try {
-  const { kv: vercelKv } = require('@vercel/kv');
-  kv = vercelKv;
+  if (process.env.VERCEL) {
+    // Only try to import KV on Vercel
+    const { kv: vercelKv } = require('@vercel/kv');
+    kv = vercelKv;
+    console.log('📝 Running on Vercel - using KV storage');
+  } else {
+    console.log('📝 Running in local mode - using file storage');
+  }
 } catch (error) {
-  console.log('📝 Running in local mode - using file storage');
+  console.log('📝 KV not available, using file storage:', error.message);
 }
 
 class FeedProcessor {
   constructor() {
     this.processedEntries = new Set(); // Track processed entries to avoid duplicates
     this.storageFile = require('path').join(__dirname, '../data/processed-entries.json');
-    this.loadProcessedEntries();
+    // Initialize storage asynchronously
+    this.initStorage();
+  }
+
+  async initStorage() {
+    try {
+      await this.loadProcessedEntries();
+    } catch (error) {
+      console.log('📚 Error initializing storage:', error.message);
+    }
   }
 
   /**
